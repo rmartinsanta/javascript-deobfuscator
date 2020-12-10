@@ -1,0 +1,8 @@
+label {
+    display: block;
+}
+#input, #output {
+    width: 80%;
+    margin: 30px;
+    min-height: 200px;
+}

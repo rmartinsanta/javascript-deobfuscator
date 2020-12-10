@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JS Deobfuscator</title>
+<!--    <script data-main="js/app.js" src="js/require.js"></script>-->
+    <script src="js/escodegen.browser.min.js"></script>
+    <script src="https://unpkg.com/esprima@~4.0/dist/esprima.js"></script>
+    <script src="js/index.js"></script>
+    <style>
+        label {
+            display: block;
+        }
+        #input, #output {
+            width: 80%;
+            margin: 30px;
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body>
+
+<textarea id="input"></textarea>
+<div id="controls">
+    <button onclick="deobfuscate()">GO GO GO</button>
+</div>
+<textarea id="output"></textarea>
+
+</body>
+</html>
