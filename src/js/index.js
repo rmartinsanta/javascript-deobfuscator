@@ -10,6 +10,12 @@ function deobfuscate(){
 }
 
 function applyTransformations(ast){
+    for (let i = 0; i < preProcessing.length; i++) {
+        let result = visit(ast, preProcessing[i]);
+        if(result){
+            ast = result;
+        }
+    }
     let transformed = true;
     while (transformed){
         transformed = false;
@@ -88,11 +94,34 @@ function simplifyComputedMemberExpression(node){
     }
 }
 
+// Caso tricky
+var test = [1,2,3];
+var copy1 = test;
+copy1.push(7)
+var copy2 = test;
+copy2.push(8);
+console.log(copy2);
+function finalVariableCalculator(node){
+
+}
+
 function isLiteral(node){
     if(node.type === "ArrayExpression" && node.elements.length === 0){
         return true;
     }
     return node.type === "Literal";
+}
+
+function isLiteralArray(node){
+    if(node.type !== "ArrayExpression") {
+        return false;
+    }
+    for (let i = 0; i < node.elements.length; i++) {
+        if(!isLiteral(node.elements[i]) || isLiteralArray(node.elements[i])){
+            return false;
+        }
+    }
+    return true;
 }
 
 function visit(node, f){
@@ -139,5 +168,6 @@ function negativeNumbers(node){
     }
 }
 
+const preProcessing = [finalIdentifierCalculator]
 const transformations = [inmediateUnaryExpression, inmediateBinaryExpression, simplifyComputedMemberExpression];
 const postProcessing = [negativeNumbers]
