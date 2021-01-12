@@ -1,0 +1,27 @@
+<mat-sidenav-container>
+  <!--<mat-sidenav>Start</mat-sidenav>-->
+  <mat-sidenav-content>
+    <h1>Javascript Deobfuscator</h1>
+
+    <div class="deobfuscate-form">
+      <mat-form-field appearance="fill">
+        <mat-label>Code to deobfuscate</mat-label>
+        <textarea matInput [(ngModel)]="obfuscatedCode"></textarea>
+      </mat-form-field>
+      <div class="button-row">
+        <button mat-raised-button color="primary" type="submit" (click)="triggerDeobfuscate()">Go!</button>
+        <button mat-raised-button color="warn" (click)="reset()">Reset</button>
+      </div>
+    </div>
+
+    <div class="results">
+    <h2>Generated Code</h2>
+
+    <pre>
+      <code [highlight]="deobfuscatedCode" [lineNumbers]="true"></code>
+    </pre>
+    </div>
+
+
+  </mat-sidenav-content>
+</mat-sidenav-container>

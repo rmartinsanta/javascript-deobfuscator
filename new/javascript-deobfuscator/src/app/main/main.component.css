@@ -1,0 +1,22 @@
+mat-sidenav-container {
+  height: 100%;
+}
+mat-sidenav-content {
+  margin: 30px;
+}
+.deobfuscate-form {
+  min-width: 300px;
+  max-width: 800px;
+}
+
+.deobfuscate-form mat-form-field {
+  width: 100%;
+}
+
+.button-row button {
+  margin: 8px;
+}
+
+.results {
+  margin-top: 30px;
+}
