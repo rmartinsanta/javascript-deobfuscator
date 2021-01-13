@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {JSParserService} from './j-s-parser.service';
 import {JSgeneratorService} from './j-sgenerator.service';
 import {Program} from 'esprima';
-import {BaseNode, Literal, UnaryExpression} from 'estree';
+import {ArrayExpression, BaseNode, BinaryExpression, Literal, MemberExpression, UnaryExpression} from 'estree';
 
 @Injectable({
   providedIn: 'root'
@@ -64,11 +64,15 @@ export class DeobfuscatorService {
 
   private inmediateBinaryExpression(node: BaseNode): BaseNode | boolean {
     if (node.type === 'BinaryExpression'){
-      if (this.isLiteral(node.left) && this.isLiteral(node.right)){
-        const _node = {};
-        _node.type = 'Literal';
-        _node.value = eval(node.left.raw + node.operator + node.right.raw);
-        _node.raw = typeof _node.value === 'string' ? '\'' + _node.value + '\'' : _node.value;
+      const expression = node as BinaryExpression;
+      if (this.isLiteral(expression.left) && this.isLiteral(expression.right)){
+        const newValue = eval(expression.left.raw + expression.operator + expression.right.raw);
+        const _node: Literal = {
+          type: 'Literal',
+          value: newValue,
+          raw: typeof newValue === 'string' ? '\'' + newValue + '\'' : newValue;
+
+        };
         return _node;
       }
     }
@@ -84,27 +88,34 @@ export class DeobfuscatorService {
   }
 
   private simplifyComputedMemberExpression(node: BaseNode): BaseNode | boolean {
-    if (node.type !== 'MemberExpression') { return false;}
+    if (node.type !== 'MemberExpression') {return false;}
     // object['lenght'] --> object.length
-    if (node.computed && node.property.type === 'Literal' && this.isValidProperty(node.property.value)) {
-      const _node = {};
-      _node.type = 'MemberExpression';
-      _node.computed = false;
-      _node.object = node.object;
-      _node.property = {
-        type: 'Identifier',
-        name: node.property.value
+    const expression = node as MemberExpression;
+    if (expression.computed && expression.property.type === 'Literal' && this.isValidProperty(expression.property.value)) {
+      const _node: MemberExpression = {
+        type: 'MemberExpression',
+        computed: false,
+        object: expression.object,
+        property: {
+          type: 'Identifier',
+          name: expression.property.value
+        },
+        optional: expression.optional
       };
-      _node.optional = node.optional;
+
       return _node;
     }
     // WARNING if first matches, second one will only be executed at next iteration
     // 'abc'[0] --> 'a'
-    if (node.property.type === 'Literal' && node.object.type === 'Literal'){
-      const _node = {};
-      _node.type = 'Literal';
-      _node.value = eval(node.object.raw + '[' + node.property.raw + ']');
-      _node.raw = typeof _node.value === 'string' ? '\'' + _node.value + '\'' : _node.value;
+    if (expression.property.type === 'Literal' && expression.object.type === 'Literal'){
+      const literal = node as Literal;
+      const newValue = eval(expression.object.raw + '[' + expression.property.raw + ']');
+      const _node = {
+        type: 'Literal',
+        value: newValue,
+        raw: typeof newValue === 'string' ? '\'' + newValue + '\'' : newValue
+      };
+
       return _node;
     }
 
@@ -112,16 +123,17 @@ export class DeobfuscatorService {
   }
 
   private isLiteral(node: BaseNode): boolean{
-    if (node.type === 'ArrayExpression' && node.elements.length === 0){
-      return true;
+    if (node.type === 'ArrayExpression'){
+      const expression = node as ArrayExpression;
+      return expression.elements.length === 0;
     }
     return node.type === 'Literal';
   }
 
-  private visit(node: BaseNode, f){
+  private visit(node: BaseNode | Program, f: (node: BaseNode) => BaseNode): BaseNode | Program | boolean {
     let changed = false;
     if (!node) {
-      return;
+      return false;
     }
     const newNode = f(node);
     if (newNode){
@@ -130,9 +142,11 @@ export class DeobfuscatorService {
     }
 
     Object.keys(node).filter(key => {
+      // @ts-ignore
       return typeof node[key] === 'object';
     }).forEach((key, index) => {
-      const value = node[key];
+      // @ts-ignore
+      const value: BaseNode = node[key] as BaseNode;
       if (Array.isArray(value)) {
         value.forEach((item, index) => {
           const newNode = this.visit(item, f);
@@ -145,21 +159,31 @@ export class DeobfuscatorService {
         const newNode = this.visit(value, f);
         if (newNode){
           changed = true;
+          // @ts-ignore
           node[key] = newNode;
         }
       }
     });
-    return changed ? node : null;
+    return changed ? node : false;
   }
 
-  private negativeNumbers(node: BaseNode){
+  private negativeNumbers(node: BaseNode): BaseNode | false {
     if (this.isLiteral(node)){
-      if (typeof node.value === 'number' && node.value < 0){
-        node.type = 'UnaryExpression';
-        node.operator = '-';
-        node.argument = {type: 'Literal', value: -node.value, raw: -node.value};
+      const literal = node as Literal;
+      if (typeof literal.value === 'number' && literal.value < 0){
+        const newNode: UnaryExpression = {
+          type: 'UnaryExpression',
+          operator: '-',
+          argument: {
+            type: 'Literal',
+            value: -literal.value,
+            raw: -literal.value
+          }
+        }
+        return newNode;
       }
     }
+    return false;
   }
 
 }
